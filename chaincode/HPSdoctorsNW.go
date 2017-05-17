@@ -4,9 +4,9 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"time"
-	"strings"
+	// "strconv"
+	// "time"
+	// "strings"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"encoding/json"
 )
@@ -32,7 +32,15 @@ type Doctor struct{
 func (self *DoctorsNWChainCode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("In Init start ")
 
-	var NPI_ID string
+	var NPI_ID, DoctorName, MedicalCouncilName, MedicalCouncilRegNumber, LicenseID, ExpiryDate, LicenseStatus, Hospital string
+
+	DoctorName = `John Doe`
+	MedicalCouncilName = `Indian Medial Council`
+	MedicalCouncilRegNumber =  `007`
+	LicenseID = `LICID_1234`
+	ExpiryDate = `2017/05/05`
+	LicenseStatus =`expired`
+	Hospital = `Columbia Asia`
 
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting NPI_ID")
@@ -120,18 +128,6 @@ func QueryDetails(stub shim.ChaincodeStubInterface, function string, args []stri
 		return json.Marshal(doctors)
 	}
 
-	if function == "GetGridPrice" {
-		fmt.Println("Invoking GetGridPrice " + function)
-		var gridPrice GridPrice
-		gridPrice,err := GetGridPrice(args[0], stub)
-		if err != nil {
-			fmt.Println("Error retrieving the Grid Price")
-			return nil, errors.New("Error retrieving the Grid Price")
-		}
-		fmt.Println("All success, returning grid price")
-		return json.Marshal(gridPrice)
-
-	}
 	return nil, errors.New("Received unknown query function name")
 
 }
@@ -166,16 +162,6 @@ func AddDoctor(userJSON string, stub shim.ChaincodeStubInterface) ([]byte, error
 		fmt.Println("Failed to unmarshal user ")
 	}
 	fmt.Println("NPI_ID : ",res.NPI_ID)
-
-	res := &Doctor{}
-	res.NPI_ID = NPI_ID
-	res.DoctorName = DoctorName
-	res.MedicalCouncilName = MedicalCouncilName
-	res.MedicalCouncilRegNumber = MedicalCouncilRegNumber
-	res.LicenseID = LicenseID
-	res.ExpiryDate = ExpiryDate
-	res.LicenseStatus = LicenseStatus
-	res.Hospital = Hospital
 
 	body, err := json.Marshal(res)
 	if err != nil {
