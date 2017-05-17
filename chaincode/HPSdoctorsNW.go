@@ -1,193 +1,112 @@
+/*
+Copyright IBM Corp 2016 All Rights Reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+		 http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package main
 
 import (
 	"errors"
 	"fmt"
-	// "strconv"
-	// "time"
-	// "strings"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"encoding/json"
 )
 
-type DoctorsNWChainCode struct {
+// SimpleChaincode example simple Chaincode implementation
+type SimpleChaincode struct {
 }
-
-type Doctor struct{
-
-	NPI_ID string `json:"NPI_ID"`
-	DoctorName string `json:"DoctorName"`
-	MedicalCouncilName string `json:"MedicalCouncilName"`
-	MedicalCouncilRegNumber string `json:"MedicalCouncilRegNumber"`
-	LicenseID string `json:"LicenseID"`
-	ExpiryDate string `json:"ExpiryDate"`
-	LicenseStatus string `json:"LicenseStatus"`
-	Hospital string `json:"Hospital"`
-
-
-}
-
-
-func (self *DoctorsNWChainCode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	fmt.Println("In Init start ")
-
-	var NPI_ID, DoctorName, MedicalCouncilName, MedicalCouncilRegNumber, LicenseID, ExpiryDate, LicenseStatus, Hospital string
-
-	DoctorName = `John Doe`
-	MedicalCouncilName = `Indian Medial Council`
-	MedicalCouncilRegNumber =  `007`
-	LicenseID = `LICID_1234`
-	ExpiryDate = `2017/05/05`
-	LicenseStatus =`expired`
-	Hospital = `Columbia Asia`
-
-	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting NPI_ID")
-	}
-
-	NPI_ID = args[0]
-
-	res := &Doctor{}
-	res.NPI_ID = NPI_ID
-	res.DoctorName = DoctorName
-	res.MedicalCouncilName = MedicalCouncilName
-	res.MedicalCouncilRegNumber = MedicalCouncilRegNumber
-	res.LicenseID = LicenseID
-	res.ExpiryDate = ExpiryDate
-	res.LicenseStatus = LicenseStatus
-	res.Hospital = Hospital
-
-	body, err := json.Marshal(res)
-	if err != nil {
-        panic(err)
-    }
-    fmt.Println(string(body))
-
-	if function == "InitializeUser" {
-		userBytes, err := AddDoctor(string(body),stub)
-		if err != nil {
-			fmt.Println("Error receiving  the User Details")
-			return nil, err
-		}
-		fmt.Println("Initialization of User complete")
-		return userBytes, nil
-	}
-	fmt.Println("Initialization No functions found ")
-	return nil, nil
-}
-
-
-func (self *DoctorsNWChainCode) Invoke(stub shim.ChaincodeStubInterface,
-	function string, args []string) ([]byte, error) {
-	fmt.Println("In Invoke with function  " + function)
-
-	if function == "AddDoctor" {
-		fmt.Println("invoking AddDoctor " + function)
-		testBytes,err := AddDoctor(args[0],stub)
-		if err != nil {
-			fmt.Println("Error performing AddDoctor ")
-			return nil, err
-		}
-		fmt.Println("Processed AddDoctor successfully. ")
-		return testBytes, nil
-	}
-
-	fmt.Println("invoke did not find func: " + function)
-	return nil, errors.New("Received unknown function invocation: " + function)
-}
-
-func (self *DoctorsNWChainCode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error){
-	fmt.Println("In Query with function " + function)
-	//bytes, err:= query.Query(stub, function,args)
-	//if err != nil {
-		//fmt.Println("Error retrieving function  ")
-		//return nil, err
-	//}
-
-	bytes, err:= QueryDetails(stub, function,args)
-	if err != nil {
-		fmt.Println("Error retrieving function  ")
-		return nil, err
-	}
-	return bytes,nil
-
-}
-
-func QueryDetails(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-
-	if function == "GetDoctors" {
-		fmt.Println("Invoking GetDoctors " + function)
-		var doctors Doctor
-		doctors,err := GetDoctors(args[0], stub)
-		if err != nil {
-			fmt.Println("Error receiving  the Doctor details")
-			return nil, errors.New("Error receiving  Doctor details")
-		}
-		fmt.Println("All success, returning doctor details")
-		return json.Marshal(doctors)
-	}
-
-	return nil, errors.New("Received unknown query function name")
-
-}
-
-func GetDoctors(NPI_ID string, stub shim.ChaincodeStubInterface)(Doctor, error) {
-	fmt.Println("In query.GetDoctors start ")
-
-	key := NPI_ID
-	var doctors Doctor
-	userBytes, err := stub.GetState(key)
-	if err != nil {
-		fmt.Println("Error retrieving Doctors" , NPI_ID)
-		return doctors, errors.New("Error retrieving Doctor Details" + NPI_ID)
-	}
-	err = json.Unmarshal(userBytes, &doctors)
-	fmt.Println("Doctor   : " , doctors);
-	fmt.Println("In query.GetDoctors end ")
-	return doctors, nil
-}
-
-
-func AddDoctor(userJSON string, stub shim.ChaincodeStubInterface) ([]byte, error) {
-	fmt.Println("In services.AddDoctor start ")
-	//smartMeterId :=args[0]
-	//userType 	:=args[1]
-
-	//var user User
-	res := &Doctor{}
-	//user := &User{}
-	err := json.Unmarshal([]byte(userJSON), res)
-	if err != nil {
-		fmt.Println("Failed to unmarshal user ")
-	}
-	fmt.Println("NPI_ID : ",res.NPI_ID)
-
-	body, err := json.Marshal(res)
-	if err != nil {
-        panic(err)
-    }
-    fmt.Println(string(body))
-	err = stub.PutState(res.NPI_ID, []byte(string(body)))
-	if err != nil {
-		fmt.Println("Failed to create Doctor ")
-	}
-
-	fmt.Println("Created Docter with Key : "+ res.NPI_ID)
-	fmt.Println("In initialize.AddDoctor end ")
-	return nil,nil
-
-}
-
-
-
-
 
 func main() {
-	err := shim.Start(new(DoctorsNWChainCode))
+	err := shim.Start(new(SimpleChaincode))
 	if err != nil {
 		fmt.Printf("Error starting Simple chaincode: %s", err)
 	}
+}
 
+// Init resets all the things
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 1")
+	}
 
+	err := stub.PutState("hello_world", []byte(args[0]))
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// Invoke isur entry point to invoke a chaincode function
+func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	fmt.Println("invoke is running " + function)
+
+	// Handle different functions
+	if function == "init" {
+		return t.Init(stub, "init", args)
+	} else if function == "write" {
+		return t.write(stub, args)
+	}
+	fmt.Println("invoke did not find func: " + function)
+
+	return nil, errors.New("Received unknown function invocation: " + function)
+}
+
+// Query is our entry point for queries
+func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	fmt.Println("query is running " + function)
+
+	// Handle different functions
+	if function == "read" { //read a variable
+		return t.read(stub, args)
+	}
+	fmt.Println("query did not find func: " + function)
+
+	return nil, errors.New("Received unknown function query: " + function)
+}
+
+// write - invoke function to write key/value pair
+func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var key, value string
+	var err error
+	fmt.Println("running write()")
+
+	if len(args) != 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the key and value to set")
+	}
+
+	key = args[0] //rename for funsies
+	value = args[1]
+	err = stub.PutState(key, []byte(value)) //write the variable into the chaincode state
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+// read - query function to read key/value pair
+func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var key, jsonResp string
+	var err error
+
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting name of the key to query")
+	}
+
+	key = args[0]
+	valAsbytes, err := stub.GetState(key)
+	if err != nil {
+		jsonResp = "{\"Error\":\"Failed to get state for " + key + "\"}"
+		return nil, errors.New(jsonResp)
+	}
+
+	return valAsbytes, nil
 }
