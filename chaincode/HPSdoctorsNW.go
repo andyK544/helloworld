@@ -23,7 +23,7 @@ type Doctor struct{
 	LicenseID string `json:"LicenseID"`
 	ExpiryDate string `json:"ExpiryDate"`
 	LicenseStatus string `json:"LicenseStatus"`
-	Hospital string `json:Hospital"`
+	Hospital string `json:"Hospital"`
 
 
 }
